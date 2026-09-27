@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -311,9 +312,7 @@ input {
 <body>
 
 <div id="loginScreen">
-
     <div class="loginBox">
-
         <h1>Private Storage</h1>
 
         <input
@@ -335,11 +334,8 @@ input {
         </button>
 
         <div id="loginError" class="error"></div>
-
     </div>
-
 </div>
-
 
 <div id="app" class="hidden">
 
@@ -381,23 +377,18 @@ input {
 
     </aside>
 
-
     <main class="main">
 
         <div class="topbar">
-
             <div id="currentPath">
                 /
             </div>
-
         </div>
 
         <div class="toolbar">
-
             <button onclick="refresh()">
                 Refresh
             </button>
-
         </div>
 
         <div id="fileList" class="fileList"></div>
@@ -405,7 +396,6 @@ input {
     </main>
 
 </div>
-
 
 <div id="editor" class="hidden">
 
@@ -437,7 +427,6 @@ input {
 
 </div>
 
-
 <div id="deleteModal" class="modal hidden">
 
     <div class="modalBox">
@@ -459,9 +448,7 @@ input {
 
         <div class="modalButtons">
 
-            <button
-                onclick="closeDeleteStorage()"
-            >
+            <button onclick="closeDeleteStorage()">
                 Cancel
             </button>
 
@@ -478,7 +465,6 @@ input {
 
 </div>
 
-
 <script>
 
 const API = "https://raidenscomputer.tail581abf.ts.net";
@@ -489,13 +475,18 @@ let currentPath = "";
 
 let editingPath = "";
 
+let loggingOut = false;
+
 
 async function api(path, options = {}) {
 
-    options.headers = options.headers || {};
+    options.headers = {
+        ...(options.headers || {})
+    };
 
     if (token) {
-        options.headers["Authorization"] = `Bearer ${token}`;
+        options.headers["Authorization"] =
+            `Bearer ${token}`;
     }
 
     const response = await fetch(
@@ -505,13 +496,38 @@ async function api(path, options = {}) {
 
     if (response.status === 401) {
 
-        logout();
+        if (!loggingOut) {
+            forceLogin();
+        }
 
         throw new Error("Authentication expired");
 
     }
 
     return response;
+
+}
+
+
+function forceLogin() {
+
+    loggingOut = true;
+
+    token = null;
+
+    localStorage.removeItem(
+        "privateStorageToken"
+    );
+
+    document
+        .getElementById("app")
+        .classList.add("hidden");
+
+    document
+        .getElementById("loginScreen")
+        .classList.remove("hidden");
+
+    loggingOut = false;
 
 }
 
@@ -547,12 +563,15 @@ async function login() {
             }
         );
 
-        const data = await response.json();
+        const data =
+            await response.json();
 
         if (!response.ok) {
+
             throw new Error(
                 data.error || "Login failed"
             );
+
         }
 
         token = data.token;
@@ -570,11 +589,16 @@ async function login() {
             .getElementById("app")
             .classList.remove("hidden");
 
-        refresh();
+        currentPath = "";
+
+        await refresh();
 
     } catch (error) {
 
-        error.textContent = error.message;
+        document
+            .getElementById("loginError")
+            .textContent =
+            error.message;
 
     }
 
@@ -583,20 +607,39 @@ async function login() {
 
 async function logout() {
 
-    try {
-        await api(
-            "/api/logout",
-            {
-                method: "POST"
-            }
-        );
-    } catch (_) {}
+    if (loggingOut) {
+        return;
+    }
+
+    loggingOut = true;
+
+    const oldToken = token;
 
     token = null;
 
     localStorage.removeItem(
         "privateStorageToken"
     );
+
+    try {
+
+        if (oldToken) {
+
+            await fetch(
+                API + "/api/logout",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Authorization":
+                            `Bearer ${oldToken}`
+                    }
+                }
+            );
+
+        }
+
+    } catch (_) {}
 
     document
         .getElementById("app")
@@ -606,21 +649,28 @@ async function logout() {
         .getElementById("loginScreen")
         .classList.remove("hidden");
 
+    loggingOut = false;
+
 }
 
 
 async function refresh() {
 
-    const response = await api(
-        "/api/files?path=" +
-        encodeURIComponent(currentPath)
-    );
+    const response =
+        await api(
+            "/api/files?path=" +
+            encodeURIComponent(currentPath)
+        );
 
-    const data = await response.json();
+    const data =
+        await response.json();
 
     if (!response.ok) {
+
         alert(data.error);
+
         return;
+
     }
 
     document
@@ -642,9 +692,7 @@ async function refresh() {
 
         parent.innerHTML = `
             <div class="fileIcon">↩</div>
-            <div class="fileName clickable">
-                ..
-            </div>
+            <div class="fileName clickable">..</div>
             <div></div>
             <div></div>
             <div></div>
@@ -725,6 +773,7 @@ async function refresh() {
         };
 
         list.appendChild(row);
+
     }
 
 }
@@ -767,21 +816,23 @@ async function createFolder() {
         return;
     }
 
-    const response = await api(
-        "/api/folder",
-        {
-            method: "POST",
+    const response =
+        await api(
+            "/api/folder",
+            {
+                method: "POST",
 
-            headers: {
-                "Content-Type": "application/json"
-            },
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
 
-            body: JSON.stringify({
-                path: currentPath,
-                name
-            })
-        }
-    );
+                body: JSON.stringify({
+                    path: currentPath,
+                    name
+                })
+            }
+        );
 
     const data =
         await response.json();
@@ -882,12 +933,7 @@ async function openFile(item) {
 
     if (!editable.includes(extension)) {
 
-        const url =
-            API +
-            "/api/file?path=" +
-            encodeURIComponent(item.path);
-
-        window.open(url, "_blank");
+        await openProtectedFile(item.path);
 
         return;
 
@@ -927,6 +973,62 @@ async function openFile(item) {
 }
 
 
+async function openProtectedFile(path) {
+
+    try {
+
+        const response =
+            await api(
+                "/api/file?path=" +
+                encodeURIComponent(path)
+            );
+
+        if (!response.ok) {
+
+            const data =
+                await response.json().catch(() => ({}));
+
+            alert(
+                data.error ||
+                "Unable to open file"
+            );
+
+            return;
+
+        }
+
+        const blob =
+            await response.blob();
+
+        const url =
+            URL.createObjectURL(blob);
+
+        window.open(
+            url,
+            "_blank",
+            "noopener,noreferrer"
+        );
+
+        setTimeout(() => {
+            URL.revokeObjectURL(url);
+        }, 60000);
+
+    } catch (error) {
+
+        if (error.message !== "Authentication expired") {
+
+            alert(
+                "Unable to open file: " +
+                error.message
+            );
+
+        }
+
+    }
+
+}
+
+
 async function saveEditor() {
 
     const content =
@@ -941,7 +1043,8 @@ async function saveEditor() {
                 method: "PUT",
 
                 headers: {
-                    "Content-Type": "application/json"
+                    "Content-Type":
+                        "application/json"
                 },
 
                 body: JSON.stringify({
@@ -980,11 +1083,7 @@ function closeEditor() {
 
 async function deleteItem(path) {
 
-    if (
-        !confirm(
-            "Delete this item?"
-        )
-    ) {
+    if (!confirm("Delete this item?")) {
         return;
     }
 
@@ -995,7 +1094,8 @@ async function deleteItem(path) {
                 method: "DELETE",
 
                 headers: {
-                    "Content-Type": "application/json"
+                    "Content-Type":
+                        "application/json"
                 },
 
                 body: JSON.stringify({
@@ -1060,7 +1160,8 @@ async function deleteStorage() {
                 method: "POST",
 
                 headers: {
-                    "Content-Type": "application/json"
+                    "Content-Type":
+                        "application/json"
                 },
 
                 body: JSON.stringify({
@@ -1077,7 +1178,8 @@ async function deleteStorage() {
         document
             .getElementById("deleteError")
             .textContent =
-            data.error || "Deletion failed";
+            data.error ||
+            "Deletion failed";
 
         return;
 
@@ -1087,7 +1189,7 @@ async function deleteStorage() {
 
     currentPath = "";
 
-    refresh();
+    await refresh();
 
     alert(
         "The entire storage folder was deleted and recreated."
@@ -1105,7 +1207,11 @@ function formatSize(bytes) {
         return (bytes / 1024).toFixed(1) + " KB";
 
     if (bytes < 1024 * 1024 * 1024)
-        return (bytes / 1024 / 1024).toFixed(1) + " MB";
+        return (
+            bytes /
+            1024 /
+            1024
+        ).toFixed(1) + " MB";
 
     return (
         bytes /
@@ -1119,7 +1225,7 @@ function formatSize(bytes) {
 
 function escapeHtml(value) {
 
-    return value
+    return String(value)
         .replaceAll("&", "&amp;")
         .replaceAll("<", "&lt;")
         .replaceAll(">", "&gt;")
@@ -1140,7 +1246,7 @@ if (token) {
         .classList.remove("hidden");
 
     refresh()
-        .catch(() => logout());
+        .catch(() => {});
 
 }
 
@@ -1148,3 +1254,4 @@ if (token) {
 
 </body>
 </html>
+```
