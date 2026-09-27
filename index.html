@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Private Storage</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #0b0d10;
+    color: #e8eaed;
+    font-family: Arial, sans-serif;
+}
+
+button,
+input {
+    font: inherit;
+}
+
+.hidden {
+    display: none !important;
+}
+
+#loginScreen {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.loginBox {
+    width: 360px;
+    padding: 32px;
+    background: #12151a;
+    border: 1px solid #252a32;
+    border-radius: 14px;
+}
+
+.loginBox h1 {
+    margin-top: 0;
+}
+
+.loginBox input {
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+    background: #0b0d10;
+    color: white;
+    border: 1px solid #303640;
+    border-radius: 8px;
+    outline: none;
+}
+
+.loginBox button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 14px;
+    background: #2563eb;
+    color: white;
+    border: 0;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.error {
+    color: #ff6b6b;
+    margin-top: 12px;
+}
+
+#app {
+    min-height: 100vh;
+    display: flex;
+}
+
+.sidebar {
+    width: 240px;
+    padding: 20px;
+    background: #111318;
+    border-right: 1px solid #252a32;
+}
+
+.sidebar h2 {
+    margin-top: 0;
+}
+
+.sidebar button {
+    width: 100%;
+    padding: 11px;
+    margin-bottom: 8px;
+    border: 0;
+    border-radius: 8px;
+    cursor: pointer;
+    background: #1a1f27;
+    color: #e8eaed;
+    text-align: left;
+}
+
+.sidebar button:hover {
+    background: #252b35;
+}
+
+.sidebar .danger {
+    margin-top: 30px;
+    background: #4b1515;
+    color: #ffb4b4;
+}
+
+.main {
+    flex: 1;
+    padding: 24px;
+    min-width: 0;
+}
+
+.topbar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+#currentPath {
+    flex: 1;
+    padding: 12px;
+    background: #111318;
+    border: 1px solid #252a32;
+    border-radius: 8px;
+    font-family: monospace;
+}
+
+.toolbar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+}
+
+.toolbar button {
+    border: 1px solid #303640;
+    background: #171b21;
+    color: white;
+    padding: 9px 13px;
+    border-radius: 7px;
+    cursor: pointer;
+}
+
+.toolbar button:hover {
+    background: #252b35;
+}
+
+.fileList {
+    background: #111318;
+    border: 1px solid #252a32;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.file {
+    display: grid;
+    grid-template-columns: 42px 1fr 100px 160px 80px;
+    gap: 10px;
+    align-items: center;
+    padding: 13px;
+    border-bottom: 1px solid #20242b;
+}
+
+.file:last-child {
+    border-bottom: 0;
+}
+
+.file:hover {
+    background: #171b21;
+}
+
+.fileIcon {
+    font-size: 20px;
+}
+
+.fileName {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fileName.clickable {
+    cursor: pointer;
+}
+
+.fileSize {
+    color: #9ba3af;
+}
+
+.fileActions button {
+    border: 0;
+    background: transparent;
+    color: #9ba3af;
+    cursor: pointer;
+}
+
+.fileActions button:hover {
+    color: white;
+}
+
+#editor {
+    position: fixed;
+    inset: 5%;
+    background: #0d1014;
+    border: 1px solid #303640;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    z-index: 10;
+}
+
+.editorHeader {
+    padding: 14px;
+    border-bottom: 1px solid #252a32;
+    display: flex;
+    justify-content: space-between;
+}
+
+#editorText {
+    flex: 1;
+    resize: none;
+    border: 0;
+    outline: none;
+    padding: 20px;
+    background: #0a0c0f;
+    color: #e8eaed;
+    font-family: Consolas, monospace;
+    font-size: 14px;
+}
+
+.editorButtons {
+    padding: 12px;
+    border-top: 1px solid #252a32;
+    display: flex;
+    gap: 8px;
+}
+
+.editorButtons button {
+    padding: 9px 14px;
+    border: 0;
+    border-radius: 7px;
+    cursor: pointer;
+}
+
+.save {
+    background: #2563eb;
+    color: white;
+}
+
+.close {
+    background: #252a32;
+    color: white;
+}
+
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.75);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+}
+
+.modalBox {
+    width: 400px;
+    padding: 25px;
+    background: #12151a;
+    border: 1px solid #303640;
+    border-radius: 12px;
+}
+
+.modalBox input {
+    width: 100%;
+    padding: 11px;
+    margin-top: 10px;
+    background: #0b0d10;
+    border: 1px solid #303640;
+    color: white;
+    border-radius: 7px;
+}
+
+.modalButtons {
+    display: flex;
+    gap: 8px;
+    margin-top: 15px;
+}
+
+.modalButtons button {
+    flex: 1;
+    padding: 10px;
+    border: 0;
+    border-radius: 7px;
+    cursor: pointer;
+}
+
+.deleteConfirm {
+    background: #b91c1c;
+    color: white;
+}
+</style>
+</head>
+
+<body>
+
+<div id="loginScreen">
+
+    <div class="loginBox">
+
+        <h1>Private Storage</h1>
+
+        <input
+            id="username"
+            type="text"
+            placeholder="Username"
+            autocomplete="username"
+        >
+
+        <input
+            id="password"
+            type="password"
+            placeholder="Password"
+            autocomplete="current-password"
+        >
+
+        <button onclick="login()">
+            Sign In
+        </button>
+
+        <div id="loginError" class="error"></div>
+
+    </div>
+
+</div>
+
+
+<div id="app" class="hidden">
+
+    <aside class="sidebar">
+
+        <h2>Storage</h2>
+
+        <button onclick="goRoot()">
+            Root
+        </button>
+
+        <button onclick="goUp()">
+            Parent Folder
+        </button>
+
+        <button onclick="createFolder()">
+            New Folder
+        </button>
+
+        <button onclick="document.getElementById('upload').click()">
+            Upload Files
+        </button>
+
+        <input
+            id="upload"
+            type="file"
+            multiple
+            hidden
+            onchange="uploadFiles()"
+        >
+
+        <button onclick="logout()">
+            Sign Out
+        </button>
+
+        <button class="danger" onclick="openDeleteStorage()">
+            Delete Entire Storage
+        </button>
+
+    </aside>
+
+
+    <main class="main">
+
+        <div class="topbar">
+
+            <div id="currentPath">
+                /
+            </div>
+
+        </div>
+
+        <div class="toolbar">
+
+            <button onclick="refresh()">
+                Refresh
+            </button>
+
+        </div>
+
+        <div id="fileList" class="fileList"></div>
+
+    </main>
+
+</div>
+
+
+<div id="editor" class="hidden">
+
+    <div class="editorHeader">
+
+        <span id="editorName">
+            File
+        </span>
+
+        <button onclick="closeEditor()">
+            X
+        </button>
+
+    </div>
+
+    <textarea id="editorText"></textarea>
+
+    <div class="editorButtons">
+
+        <button class="save" onclick="saveEditor()">
+            Save
+        </button>
+
+        <button class="close" onclick="closeEditor()">
+            Cancel
+        </button>
+
+    </div>
+
+</div>
+
+
+<div id="deleteModal" class="modal hidden">
+
+    <div class="modalBox">
+
+        <h2>Delete Entire Storage</h2>
+
+        <p>
+            This permanently deletes everything inside the configured
+            storage folder.
+        </p>
+
+        <input
+            id="deletePassword"
+            type="password"
+            placeholder="Deletion password"
+        >
+
+        <div id="deleteError" class="error"></div>
+
+        <div class="modalButtons">
+
+            <button
+                onclick="closeDeleteStorage()"
+            >
+                Cancel
+            </button>
+
+            <button
+                class="deleteConfirm"
+                onclick="deleteStorage()"
+            >
+                Permanently Delete
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+const API = "https://YOUR-BACKEND-ADDRESS";
+
+let token = localStorage.getItem("privateStorageToken");
+
+let currentPath = "";
+
+let editingPath = "";
+
+
+async function api(path, options = {}) {
+
+    options.headers = options.headers || {};
+
+    if (token) {
+        options.headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(
+        API + path,
+        options
+    );
+
+    if (response.status === 401) {
+
+        logout();
+
+        throw new Error("Authentication expired");
+
+    }
+
+    return response;
+
+}
+
+
+async function login() {
+
+    const username =
+        document.getElementById("username").value;
+
+    const password =
+        document.getElementById("password").value;
+
+    const error =
+        document.getElementById("loginError");
+
+    error.textContent = "";
+
+    try {
+
+        const response = await fetch(
+            API + "/api/login",
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
+                body: JSON.stringify({
+                    username,
+                    password
+                })
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(
+                data.error || "Login failed"
+            );
+        }
+
+        token = data.token;
+
+        localStorage.setItem(
+            "privateStorageToken",
+            token
+        );
+
+        document
+            .getElementById("loginScreen")
+            .classList.add("hidden");
+
+        document
+            .getElementById("app")
+            .classList.remove("hidden");
+
+        refresh();
+
+    } catch (error) {
+
+        error.textContent = error.message;
+
+    }
+
+}
+
+
+async function logout() {
+
+    try {
+        await api(
+            "/api/logout",
+            {
+                method: "POST"
+            }
+        );
+    } catch (_) {}
+
+    token = null;
+
+    localStorage.removeItem(
+        "privateStorageToken"
+    );
+
+    document
+        .getElementById("app")
+        .classList.add("hidden");
+
+    document
+        .getElementById("loginScreen")
+        .classList.remove("hidden");
+
+}
+
+
+async function refresh() {
+
+    const response = await api(
+        "/api/files?path=" +
+        encodeURIComponent(currentPath)
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        alert(data.error);
+        return;
+    }
+
+    document
+        .getElementById("currentPath")
+        .textContent =
+        "/" + currentPath;
+
+    const list =
+        document.getElementById("fileList");
+
+    list.innerHTML = "";
+
+    if (currentPath) {
+
+        const parent =
+            document.createElement("div");
+
+        parent.className = "file";
+
+        parent.innerHTML = `
+            <div class="fileIcon">↩</div>
+            <div class="fileName clickable">
+                ..
+            </div>
+            <div></div>
+            <div></div>
+            <div></div>
+        `;
+
+        parent.onclick = goUp;
+
+        list.appendChild(parent);
+    }
+
+    for (const item of data.items) {
+
+        const row =
+            document.createElement("div");
+
+        row.className = "file";
+
+        const icon =
+            item.type === "folder"
+                ? "📁"
+                : "📄";
+
+        const size =
+            item.type === "file"
+                ? formatSize(item.size)
+                : "";
+
+        row.innerHTML = `
+            <div class="fileIcon">${icon}</div>
+
+            <div class="fileName clickable">
+                ${escapeHtml(item.name)}
+            </div>
+
+            <div class="fileSize">
+                ${size}
+            </div>
+
+            <div class="fileSize">
+                ${new Date(
+                    item.modified * 1000
+                ).toLocaleString()}
+            </div>
+
+            <div class="fileActions">
+                <button>Delete</button>
+            </div>
+        `;
+
+        const name =
+            row.querySelector(".fileName");
+
+        name.onclick = () => {
+
+            if (item.type === "folder") {
+
+                currentPath = item.path;
+
+                refresh();
+
+            } else {
+
+                openFile(item);
+
+            }
+
+        };
+
+        const deleteButton =
+            row.querySelector(".fileActions button");
+
+        deleteButton.onclick = event => {
+
+            event.stopPropagation();
+
+            deleteItem(item.path);
+
+        };
+
+        list.appendChild(row);
+    }
+
+}
+
+
+function goRoot() {
+
+    currentPath = "";
+
+    refresh();
+
+}
+
+
+function goUp() {
+
+    if (!currentPath) {
+        return;
+    }
+
+    const parts =
+        currentPath.split("/");
+
+    parts.pop();
+
+    currentPath =
+        parts.join("/");
+
+    refresh();
+
+}
+
+
+async function createFolder() {
+
+    const name =
+        prompt("Folder name:");
+
+    if (!name) {
+        return;
+    }
+
+    const response = await api(
+        "/api/folder",
+        {
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+                path: currentPath,
+                name
+            })
+        }
+    );
+
+    const data =
+        await response.json();
+
+    if (!response.ok) {
+
+        alert(data.error);
+
+        return;
+
+    }
+
+    refresh();
+
+}
+
+
+async function uploadFiles() {
+
+    const input =
+        document.getElementById("upload");
+
+    for (const file of input.files) {
+
+        const form =
+            new FormData();
+
+        form.append(
+            "file",
+            file
+        );
+
+        form.append(
+            "path",
+            currentPath
+        );
+
+        const response =
+            await api(
+                "/api/upload",
+                {
+                    method: "POST",
+                    body: form
+                }
+            );
+
+        if (!response.ok) {
+
+            const data =
+                await response.json();
+
+            alert(data.error);
+
+            break;
+
+        }
+
+    }
+
+    input.value = "";
+
+    refresh();
+
+}
+
+
+async function openFile(item) {
+
+    const extension =
+        item.name
+            .split(".")
+            .pop()
+            .toLowerCase();
+
+    const editable = [
+        "txt",
+        "py",
+        "js",
+        "html",
+        "css",
+        "json",
+        "xml",
+        "lua",
+        "cs",
+        "cpp",
+        "h",
+        "hpp",
+        "java",
+        "md",
+        "yaml",
+        "yml",
+        "ini",
+        "cfg",
+        "bat",
+        "ps1",
+        "sh"
+    ];
+
+    if (!editable.includes(extension)) {
+
+        const url =
+            API +
+            "/api/file?path=" +
+            encodeURIComponent(item.path);
+
+        window.open(url, "_blank");
+
+        return;
+
+    }
+
+    const response =
+        await api(
+            "/api/file?path=" +
+            encodeURIComponent(item.path)
+        );
+
+    if (!response.ok) {
+
+        alert("Unable to open file");
+
+        return;
+
+    }
+
+    const content =
+        await response.text();
+
+    editingPath = item.path;
+
+    document
+        .getElementById("editorName")
+        .textContent = item.name;
+
+    document
+        .getElementById("editorText")
+        .value = content;
+
+    document
+        .getElementById("editor")
+        .classList.remove("hidden");
+
+}
+
+
+async function saveEditor() {
+
+    const content =
+        document
+            .getElementById("editorText")
+            .value;
+
+    const response =
+        await api(
+            "/api/save",
+            {
+                method: "PUT",
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
+                body: JSON.stringify({
+                    path: editingPath,
+                    content
+                })
+            }
+        );
+
+    const data =
+        await response.json();
+
+    if (!response.ok) {
+
+        alert(data.error);
+
+        return;
+
+    }
+
+    closeEditor();
+
+}
+
+
+function closeEditor() {
+
+    editingPath = "";
+
+    document
+        .getElementById("editor")
+        .classList.add("hidden");
+
+}
+
+
+async function deleteItem(path) {
+
+    if (
+        !confirm(
+            "Delete this item?"
+        )
+    ) {
+        return;
+    }
+
+    const response =
+        await api(
+            "/api/delete",
+            {
+                method: "DELETE",
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
+                body: JSON.stringify({
+                    path
+                })
+            }
+        );
+
+    const data =
+        await response.json();
+
+    if (!response.ok) {
+
+        alert(data.error);
+
+        return;
+
+    }
+
+    refresh();
+
+}
+
+
+function openDeleteStorage() {
+
+    document
+        .getElementById("deletePassword")
+        .value = "";
+
+    document
+        .getElementById("deleteError")
+        .textContent = "";
+
+    document
+        .getElementById("deleteModal")
+        .classList.remove("hidden");
+
+}
+
+
+function closeDeleteStorage() {
+
+    document
+        .getElementById("deleteModal")
+        .classList.add("hidden");
+
+}
+
+
+async function deleteStorage() {
+
+    const password =
+        document
+            .getElementById("deletePassword")
+            .value;
+
+    const response =
+        await api(
+            "/api/delete-storage",
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
+                body: JSON.stringify({
+                    password
+                })
+            }
+        );
+
+    const data =
+        await response.json();
+
+    if (!response.ok) {
+
+        document
+            .getElementById("deleteError")
+            .textContent =
+            data.error || "Deletion failed";
+
+        return;
+
+    }
+
+    closeDeleteStorage();
+
+    currentPath = "";
+
+    refresh();
+
+    alert(
+        "The entire storage folder was deleted and recreated."
+    );
+
+}
+
+
+function formatSize(bytes) {
+
+    if (bytes < 1024)
+        return bytes + " B";
+
+    if (bytes < 1024 * 1024)
+        return (bytes / 1024).toFixed(1) + " KB";
+
+    if (bytes < 1024 * 1024 * 1024)
+        return (bytes / 1024 / 1024).toFixed(1) + " MB";
+
+    return (
+        bytes /
+        1024 /
+        1024 /
+        1024
+    ).toFixed(2) + " GB";
+
+}
+
+
+function escapeHtml(value) {
+
+    return value
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+
+}
+
+
+if (token) {
+
+    document
+        .getElementById("loginScreen")
+        .classList.add("hidden");
+
+    document
+        .getElementById("app")
+        .classList.remove("hidden");
+
+    refresh()
+        .catch(() => logout());
+
+}
+
+</script>
+
+</body>
+</html>
