@@ -132,6 +132,20 @@ input {
     font-family: monospace;
 }
 
+#searchInput {
+    width: 260px;
+    padding: 12px;
+    background: #111318;
+    border: 1px solid #252a32;
+    border-radius: 8px;
+    color: white;
+    outline: none;
+}
+
+#searchInput:focus {
+    border-color: #2563eb;
+}
+
 .toolbar {
     display: flex;
     gap: 8px;
@@ -387,6 +401,12 @@ input {
             <div id="currentPath">
                 /
             </div>
+            <input 
+                id="searchInput" 
+                type="text" 
+                placeholder="Search files..." 
+                oninput="filterFiles()"
+            >
         </div>
 
         <div class="toolbar">
@@ -480,6 +500,8 @@ let currentPath = "";
 let editingPath = "";
 
 let loggingOut = false;
+
+let cachedItems = [];
 
 
 async function api(path, options = {}) {
@@ -682,6 +704,18 @@ async function refresh() {
         .textContent =
         "/" + currentPath;
 
+    cachedItems = data.items || [];
+
+    filterFiles();
+
+}
+
+
+function filterFiles() {
+
+    const searchQuery = 
+        document.getElementById("searchInput").value.toLowerCase();
+
     const list =
         document.getElementById("fileList");
 
@@ -707,7 +741,11 @@ async function refresh() {
         list.appendChild(parent);
     }
 
-    for (const item of data.items) {
+    const filtered = cachedItems.filter(item => 
+        item.name.toLowerCase().includes(searchQuery)
+    );
+
+    for (const item of filtered) {
 
         const row =
             document.createElement("div");
@@ -760,6 +798,8 @@ async function refresh() {
 
                 currentPath = item.path;
 
+                document.getElementById("searchInput").value = "";
+
                 refresh();
 
             } else {
@@ -807,6 +847,8 @@ function goRoot() {
 
     currentPath = "";
 
+    document.getElementById("searchInput").value = "";
+
     refresh();
 
 }
@@ -825,6 +867,8 @@ function goUp() {
 
     currentPath =
         parts.join("/");
+
+    document.getElementById("searchInput").value = "";
 
     refresh();
 
