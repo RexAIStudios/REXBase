@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -162,7 +161,7 @@ input {
 
 .file {
     display: grid;
-    grid-template-columns: 42px 1fr 100px 160px 80px;
+    grid-template-columns: 42px 1fr 100px 160px 140px;
     gap: 10px;
     align-items: center;
     padding: 13px;
@@ -193,6 +192,11 @@ input {
 
 .fileSize {
     color: #9ba3af;
+}
+
+.fileActions {
+    display: flex;
+    gap: 8px;
 }
 
 .fileActions button {
@@ -720,6 +724,10 @@ async function refresh() {
                 ? formatSize(item.size)
                 : "";
 
+        const downloadButtonHtml = item.type === "file" 
+            ? `<button class="btn-download">Download</button>` 
+            : ``;
+
         row.innerHTML = `
             <div class="fileIcon">${icon}</div>
 
@@ -738,7 +746,8 @@ async function refresh() {
             </div>
 
             <div class="fileActions">
-                <button>Delete</button>
+                ${downloadButtonHtml}
+                <button class="btn-delete">Delete</button>
             </div>
         `;
 
@@ -761,8 +770,23 @@ async function refresh() {
 
         };
 
+        if (item.type === "file") {
+
+            const downloadBtn =
+                row.querySelector(".btn-download");
+
+            downloadBtn.onclick = event => {
+
+                event.stopPropagation();
+
+                downloadFile(item.path, item.name);
+
+            };
+
+        }
+
         const deleteButton =
-            row.querySelector(".fileActions button");
+            row.querySelector(".btn-delete");
 
         deleteButton.onclick = event => {
 
@@ -1029,6 +1053,55 @@ async function openProtectedFile(path) {
 }
 
 
+async function downloadFile(path, fileName) {
+
+    try {
+
+        const response =
+            await api(
+                "/api/file?path=" +
+                encodeURIComponent(path)
+            );
+
+        if (!response.ok) {
+
+            alert("Unable to download file");
+
+            return;
+
+        }
+
+        const blob = await response.blob();
+
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+
+        a.href = url;
+
+        a.download = fileName;
+
+        document.body.appendChild(a);
+
+        a.click();
+
+        a.remove();
+
+        URL.revokeObjectURL(url);
+
+    } catch (error) {
+
+        if (error.message !== "Authentication expired") {
+
+            alert("Download failed: " + error.message);
+
+        }
+
+    }
+
+}
+
+
 async function saveEditor() {
 
     const content =
@@ -1066,6 +1139,8 @@ async function saveEditor() {
     }
 
     closeEditor();
+
+    await refresh();
 
 }
 
